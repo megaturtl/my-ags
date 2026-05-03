@@ -1,0 +1,29 @@
+.workspaces {
+  .workspace {
+    min-width: 22px;
+    min-height: 22px;
+    margin: 3px 2px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--base) 78%, transparent);
+    color: var(--text);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--crust) 50%, transparent);
+    transition: all 220ms cubic-bezier(.2, .8, .2, 1);
+
+    &.active {
+      background: var(--lavender);
+      color: var(--base);
+      font-weight: 700;
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--lavender) 35%, transparent);
+    }
+
+    &.empty {
+      color: var(--overlay1);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--surface1) 85%, transparent);
+      color: var(--text);
+    }
+  }
+}
