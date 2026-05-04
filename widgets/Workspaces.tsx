@@ -80,9 +80,19 @@ function Workspace({ id }: { id: number }) {
 }
 
 export default function Workspaces() {
+  const allWorkspaces = createBinding(hyprland, "workspaces").as(ws => {
+    // Get IDs of all currently existing workspaces
+    const activeIds = ws.map(w => w.get_id())
+    
+    // Merge with persistent workspaces
+    const merged = [...new Set([...PERSISTENT_WORKSPACES, ...activeIds])]
+    
+    return merged.sort((a, b) => a - b)
+  })
+
   return (
     <box cssClasses={["workspaces"]}>
-      <For each={createBinding(hyprland, "workspaces").as(() => PERSISTENT_WORKSPACES)}>
+      <For each={allWorkspaces}>
         {(id: number) => <Workspace id={id} />}
       </For>
     </box>
