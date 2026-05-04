@@ -1,6 +1,7 @@
 import AstalHyprland from "gi://AstalHyprland"
 import { createBinding } from "ags"
 import { For } from "ags"
+import { BubbleButton } from "./BubbleButton"
 
 const hyprland = AstalHyprland.get_default()
 
@@ -44,6 +45,7 @@ function Workspace({ id }: { id: number }) {
   const clients = createBinding(hyprland, "clients")
 
   const isActive = focusedWs(ws => ws?.get_id() === id)
+  const isEmpty = clients(cs => !cs.some(c => c.get_workspace()?.get_id() === id))
 
   const icons = clients(cs =>
     cs
@@ -52,28 +54,28 @@ function Workspace({ id }: { id: number }) {
       .join("")
   )
 
-  const exists = workspaces(ws => ws.some(w => w.get_id() === id))
-  const isEmpty = clients(cs => !cs.some(c => c.get_workspace()?.get_id() === id))
+  const name = focusedWs(ws => {
+  const active = ws?.get_id() === id
+  const empty = !clients.get().some(c => c.get_workspace()?.get_id() === id)
+  return `workspace ${active ? "active" : ""} ${empty ? "empty" : ""}`.trim()
+})
 
-  const cssClasses = isActive.as(active => [
-    "workspace",
-    ...(active ? ["active"] : []),
-    ...(isEmpty.peek() ? ["empty"] : []),
-  ])
-
-  const tooltip = icons.as(i =>
+  const tooltip = icons(i =>
     i ? `Workspace ${id}\n${i.trim()}` : `Workspace ${id}`
   )
 
   return (
-    <button
-      cssClasses={cssClasses}
-      tooltipText={tooltip}
-      onClicked={() => hyprland.dispatch("workspace", String(id))}
-      visible={exists.as(e => e || PERSISTENT_WORKSPACES.includes(id))}
+    <BubbleButton
+      name={name}
+      tooltip={tooltip}
+      onLeftClick={() => hyprland.dispatch("workspace", String(id))}
+      onScroll={(dy) => {
+        if (dy > 0) hyprland.dispatch("workspace", "+1")
+        else hyprland.dispatch("workspace", "-1")
+      }}
     >
-      <label label={icons.as(i => i ? `${id}${i}` : String(id))} />
-    </button>
+      <label label={icons(i => i ? `${id}${i}` : String(id))} />
+    </BubbleButton>
   )
 }
 
