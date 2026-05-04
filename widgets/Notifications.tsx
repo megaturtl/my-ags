@@ -46,7 +46,7 @@ export default function Notifications() {
       onLeftClick={() => execAsync("swaync-client -t -sw")}
       onRightClick={() => execAsync("swaync-client -C")}
     >
-      <label label={state(s => `${icon(s)}  ${s.count}`)} />
+      <label label={state(s => `${icon(s)} ${s.count}`)} />
     </BubbleButton>
   )
 }

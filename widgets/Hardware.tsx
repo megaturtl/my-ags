@@ -79,15 +79,17 @@ function getState(): HardwareState {
   return { cpu, temp, mem, tooltip }
 }
 
+const pad3 = (s: string) => s.padStart(3)
+
 export default function Hardware() {
   const state = createPoll<HardwareState>({ cpu: 0, temp: "0°", mem: 0, tooltip: "" }, 2000, getState)
 
   return (
     <BubbleButton name="hardware" tooltip={state(s => s.tooltip)}>
       <box spacing={4}>
-        <label cssClasses={["cpu"]} label={state(s => `󰍛 ${s.cpu}%`)} />
-        <label cssClasses={["temp"]} label={state(s => `󰔏 ${s.temp}`)} />
-        <label cssClasses={["mem"]} label={state(s => ` ${s.mem}%`)} />
+        <label cssClasses={["cpu"]} label={state(s => `󰍛${pad3(s.cpu.toString())}%`)} />
+        <label cssClasses={["temp"]} label={state(s => `󰔏 ${pad3(s.temp)}`)} />
+        <label cssClasses={["mem"]} label={state(s => ` ${pad3(s.mem.toString())}%`)} />
       </box>
     </BubbleButton>
   )

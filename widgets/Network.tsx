@@ -13,47 +13,65 @@ function wifiIcon(strength: number): string {
   return "󰤟"
 }
 
+// Always returns 4 chars so the speed section never changes width
 function formatSpeed(bytesPerSec: number): string {
-  if (bytesPerSec > 1024 * 1024) return `${(bytesPerSec / 1024 / 1024).toFixed(1)}M`
-  if (bytesPerSec > 1024) return `${(bytesPerSec / 1024).toFixed(0)}K`
-  return `${bytesPerSec}B`
+  if (bytesPerSec >= 10 * 1024 * 1024) return `${Math.round(bytesPerSec / 1024 / 1024)}M`.padStart(4)
+  if (bytesPerSec >= 1024 * 1024) return `${(bytesPerSec / 1024 / 1024).toFixed(1)}M`.padStart(4)
+  if (bytesPerSec >= 1024) return `${Math.round(bytesPerSec / 1024)}K`.padStart(4)
+  return `${bytesPerSec}B`.padStart(4)
 }
 
-type NetStats = { rx: number; tx: number }
+type NetStats = { rx: number; tx: number; time: number }
 
-function readIfaceBytes(iface: string): NetStats {
-  const lines = readFile("/proc/net/dev").split("\n")
-  const line = lines.find(l => l.trim().startsWith(iface + ":"))
-  if (!line) return { rx: 0, tx: 0 }
-  const parts = line.trim().split(/\s+/)
-  return { rx: Number(parts[1]), tx: Number(parts[9]) }
-}
-
-let prev: NetStats = { rx: 0, tx: 0 }
+let prev: NetStats | null = null
 
 function getLabel(): string {
   const wifi = network.wifi
   const wired = network.wired
 
   if (wired?.get_device()?.state === AstalNetwork.DeviceState.ACTIVATED) {
-    return `󰈀  ethernet`
+    return "󰈀 LAN"
   }
 
   if (wifi) {
     const iface = wifi.get_device()?.get_iface() ?? ""
-    const curr = readIfaceBytes(iface)
-    const rx = Math.max(0, curr.rx - prev.rx)
-    const tx = Math.max(0, curr.tx - prev.tx)
-    prev = curr
+    const currRaw = readIfaceBytes(iface)
+    const now = Date.now()
 
-    const speed = rx + tx > 0
-      ? `  ⇣${formatSpeed(rx)} ⇡${formatSpeed(tx)}`
-      : ""
+    // 2. If this is the FIRST run, just store the data and return a placeholder
+    if (!prev) {
+      prev = { ...currRaw, time: now }
+      return `${wifiIcon(wifi.strength)}  ⇣${formatSpeed(0)} ⇡${formatSpeed(0)}`
+    }
 
-    return `${wifiIcon(wifi.strength)}  ${wifi.ssid ?? "unknown"}${speed}`
+    const elapsedSeconds = (now - prev.time) / 1000
+
+    // 3. Normal calculation logic
+    const rx = elapsedSeconds > 0 ? Math.max(0, currRaw.rx - prev.rx) / elapsedSeconds : 0
+    const tx = elapsedSeconds > 0 ? Math.max(0, currRaw.tx - prev.tx) / elapsedSeconds : 0
+
+    prev = { ...currRaw, time: now }
+
+    const speed = `⇣${formatSpeed(rx)} ⇡${formatSpeed(tx)}`
+    return `${wifiIcon(wifi.strength)}  ${speed}`
   }
 
-  return "󰤭  offline"
+  // Reset prev if we go offline so it doesn't jump when reconnecting
+  prev = null
+  return "󰤭 Offline"
+}
+
+type RawStats = { rx: number; tx: number }
+
+function readIfaceBytes(iface: string): RawStats {
+  const lines = readFile("/proc/net/dev").split("\n")
+  const line = lines.find(l => l.trim().startsWith(iface + ":"))
+  if (!line) return { rx: 0, tx: 0 }
+  const parts = line.trim().split(/\s+/)
+  return {
+    rx: parseInt(parts[1], 10),
+    tx: parseInt(parts[9], 10)
+  }
 }
 
 async function getTooltip(): Promise<string> {
@@ -84,7 +102,7 @@ async function getTooltip(): Promise<string> {
 }
 
 export default function Network() {
-  const label = createPoll("", 1000, getLabel)
+  const label = createPoll("", 2000, getLabel)
   const tooltip = createPoll("", 5000, getTooltip)
 
   return (

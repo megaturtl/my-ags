@@ -22,7 +22,7 @@ export default function Audio() {
   const label = createComputed(() => {
     const v = volume()
     const m = muted()
-    return `${volumeIcon(v, m)}  ${Math.round(v * 100)}%`
+    return `${volumeIcon(v, m)} ${Math.round(v * 100)}%`
   })
 
   const tooltip = createComputed(() => [
