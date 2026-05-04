@@ -5,7 +5,10 @@ export function createMultiClickGesture(handlers: Partial<Record<1 | 2 | 3, () =
   gesture.button = 0
   gesture.connect("pressed", () => {
     const btn = gesture.get_current_button() as 1 | 2 | 3
-    handlers[btn]?.()
+    if (handlers[btn]) {
+      gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+      handlers[btn]!()
+    }
   })
   return gesture
 }

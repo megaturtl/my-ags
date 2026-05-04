@@ -1,7 +1,8 @@
 import AstalMpris from "gi://AstalMpris"
-import { createBinding, createComputed } from "ags"
+import { createBinding, createComputed, createState } from "ags"
 import { For } from "ags"
 import { BubbleButton } from "./BubbleButton"
+import { MarqueeLabel } from "./MarqueeLabel"
 
 const mpris = AstalMpris.get_default()
 
@@ -12,22 +13,29 @@ function playerIcon(player: AstalMpris.Player): string {
   return "󰝚"
 }
 
+let lastPlaying: AstalMpris.Player | null = null
+
+function pickPlayer(ps: AstalMpris.Player[]): AstalMpris.Player | null {
+  const playing = ps.find(p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING)
+  if (playing) return playing
+  if (lastPlaying && ps.includes(lastPlaying)) return lastPlaying
+  return ps.find(p => p.playbackStatus === AstalMpris.PlaybackStatus.PAUSED)
+    ?? ps[0]
+    ?? null
+}
+
 function Player({ player }: { player: AstalMpris.Player }) {
   const status = createBinding(player, "playbackStatus")
   const title = createBinding(player, "title")
   const artist = createBinding(player, "artist")
   const album = createBinding(player, "album")
 
-  const label = createComputed(() => {
-    const t = title() ?? ""
-    const a = artist() ?? ""
-    const s = status()
-    const icon = playerIcon(player)
-    const statusIcon = s === AstalMpris.PlaybackStatus.PLAYING ? "" : ""
-    const dynamic = [a, t].filter(Boolean).join(" - ")
-    const truncated = dynamic.length > 32 ? dynamic.slice(0, 32) + "…" : dynamic
-    return `${icon}  ${truncated}  ${statusIcon}`
-  })
+  const appIcon = playerIcon(player)
+  const statusIcon = status.as(s => s === AstalMpris.PlaybackStatus.PLAYING ? "" : "")
+
+  const scrollText = createComputed(() =>
+    [artist() ?? "", title() ?? ""].filter(Boolean).join(" - ")
+  )
 
   const tooltip = createComputed(() => [
     title() ?? "",
@@ -47,17 +55,47 @@ function Player({ player }: { player: AstalMpris.Player }) {
       onMiddleClick={() => player.previous()}
       onRightClick={() => player.next()}
     >
-      <label label={label} />
+      <box>
+        <label label={`${appIcon}  `} />
+        <MarqueeLabel label={scrollText} />
+        <label label={statusIcon.as(s => `  ${s}`)} />
+      </box>
     </BubbleButton>
   )
 }
 
 export default function Mpris() {
-  const players = createBinding(mpris, "players").as(ps => ps.slice(0, 1))
+  lastPlaying = (mpris.players ?? []).find(
+    p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING
+  ) ?? null
+
+  const [active, setActive] = createState<AstalMpris.Player | null>(
+    pickPlayer(mpris.players ?? [])
+  )
+
+  let statusSubs: (() => void)[] = []
+
+  function rebind(ps: AstalMpris.Player[]) {
+    statusSubs.forEach(f => f())
+    statusSubs = ps.map(p =>
+      createBinding(p, "playbackStatus").subscribe(() => {
+        if (p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING) lastPlaying = p
+        setActive(pickPlayer(mpris.players ?? []))
+      })
+    )
+  }
+
+  createBinding(mpris, "players").subscribe(() => {
+    const ps = mpris.players ?? []
+    setActive(pickPlayer(ps))
+    rebind(ps)
+  })
+
+  rebind(mpris.players ?? [])
 
   return (
     <box>
-      <For each={players}>
+      <For each={active(p => p ? [p] : [])}>
         {(player: AstalMpris.Player) => <Player player={player} />}
       </For>
     </box>
