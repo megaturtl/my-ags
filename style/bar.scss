@@ -4,17 +4,16 @@
   font-weight: 500;
 }
 
-window.Bar {
-  background: transparent;
+window.Bar,
+Bar {
+  background: none;
   color: var(--text);
 
-  > centerbox {
-    background: transparent;
+  centerbox {
     padding: 4px 8px;
   }
 }
 
-// Bubble base -- applied as a CSS class to each widget box.
 .bubble {
   background: color-mix(in srgb, var(--base) 78%, transparent);
   color: var(--text);
