@@ -22,7 +22,7 @@ let prevCores: Stat[] = initLines().filter(l => /^cpu\d/.test(l)).map(parseStat)
 
 function getCpuTemp(): string {
   try {
-    return `${Math.round(Number(readFile("/sys/class/thermal/thermal_zone1/temp").trim()) / 1000)}°`
+    return `${Math.round(Number(readFile("/sys/class/thermal/thermal_zone2/temp").trim()) / 1000)}°`
   } catch {
     return "N/A"
   }

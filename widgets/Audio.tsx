@@ -18,6 +18,8 @@ export default function Audio() {
 
   const volume = createBinding(speaker, "volume")
   const muted = createBinding(speaker, "mute")
+  // Bind to the description (the "friendly" name of the sink)
+  const description = createBinding(speaker, "description")
 
   const label = createComputed(() => {
     const v = volume()
@@ -26,6 +28,8 @@ export default function Audio() {
   })
 
   const tooltip = createComputed(() => [
+    // Add the sink name at the top
+    `Device: ${description()}`,
     `Volume: ${Math.round(volume() * 100)}%`,
     `Muted: ${muted() ? "yes" : "no"}`,
     "────────────────",

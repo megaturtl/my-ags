@@ -57,7 +57,7 @@ function Player({ player }: { player: AstalMpris.Player }) {
     >
       <box>
         <label label={`${appIcon}  `} />
-        <MarqueeLabel label={scrollText} />
+        <MarqueeLabel label={scrollText} width={160} />
         <label label={statusIcon.as(s => `  ${s}`)} />
       </box>
     </BubbleButton>
