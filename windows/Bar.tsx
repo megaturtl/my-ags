@@ -31,12 +31,12 @@ export default function Bar(gdkmonitor: Gdk.Monitor) {
         <box $type="center">
           <Notifications />
           <Clock />
+          <Tray />
         </box>
         <box $type="end" hexpand halign={Gtk.Align.END}>
-          <Tray />
           <Hardware />
-          <Audio />
           <Network />
+          <Audio />
           <Power />
         </box>
       </centerbox>
