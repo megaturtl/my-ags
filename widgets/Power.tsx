@@ -1,15 +1,14 @@
 import { execAsync } from "ags/process"
-import { BubbleButton } from "./BubbleButton"
+import { Bubble } from "./Bubble"
 
 export default function PowerButton() {
   return (
-    <BubbleButton
+    <Bubble
       name="power"
-      tooltip={"Left · power menu (wlogout)\nRight · lock screen (hyprlock)"}
+      tooltip={`Left · power menu (wlogout)\nRight · lock screen (hyprlock)`}
+      label="󰐥"
       onLeftClick={() => execAsync("wlogout")}
       onRightClick={() => execAsync("hyprlock")}
-    >
-      <label label="󰐥" />
-    </BubbleButton>
+    />
   )
 }

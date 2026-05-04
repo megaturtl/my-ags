@@ -19,3 +19,16 @@ export function createScrollController(onScroll: (dy: number) => void) {
   scroll.connect("scroll", (_s: Gtk.EventControllerScroll, _dx: number, dy: number) => onScroll(dy))
   return scroll
 }
+
+// Per-button raw click gesture. Used when a widget needs the originating
+// widget reference (e.g. tray items popping up a menu anchored on themselves).
+export function createRawClickGesture(
+  handler: (button: number, widget: Gtk.Widget | null) => void,
+) {
+  const gesture = new Gtk.GestureClick()
+  gesture.button = 0
+  gesture.connect("pressed", () => {
+    handler(gesture.get_current_button(), gesture.get_widget())
+  })
+  return gesture
+}

@@ -1,9 +1,12 @@
+import { Accessor } from "ags"
 import { Gdk } from "ags/gtk4"
 import { createMultiClickGesture, createScrollController } from "../lib/gestures"
 
+type Reactive<T> = T | Accessor<T>
+
 interface Props {
-  name: any
-  tooltip?: any
+  name: Reactive<string>
+  tooltip?: Reactive<string>
   onLeftClick?: () => void
   onMiddleClick?: () => void
   onRightClick?: () => void
@@ -18,8 +21,8 @@ export function BubbleButton({ name, tooltip, onLeftClick, onMiddleClick, onRigh
     : null
 
   const classes = typeof name === "string"
-  ? ["bubble", name]
-  : name((n: string) => ["bubble", ...n.split(" ").filter(Boolean)])
+    ? ["bubble", name]
+    : name(n => ["bubble", ...n.split(" ").filter(Boolean)])
 
   return (
     <button

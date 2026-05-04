@@ -1,52 +1,18 @@
-import { execAsync, subprocess } from "ags/process"
-import { createState } from "ags"
-import { BubbleButton } from "./BubbleButton"
-
-type SwayncState = {
-  count: number
-  dnd: boolean
-}
-
-function icon(state: SwayncState): string {
-  if (state.dnd) return "󰂛"
-  if (state.count > 0) return "󰂚"
-  return "󰂜"
-}
-
-async function getState(): Promise<SwayncState> {
-  const [count, dnd] = await Promise.all([
-    execAsync("swaync-client -c").then(Number).catch(() => 0),
-    execAsync("swaync-client -D").then(s => s.trim() === "true").catch(() => false),
-  ])
-  return { count, dnd }
-}
+import { createComputed } from "ags"
+import { notifIcon } from "../lib/pure"
+import { count, dnd, tooltip, togglePanel, clearAll } from "../services/notifications"
+import { Bubble } from "./Bubble"
 
 export default function Notifications() {
-  const [state, setState] = createState<SwayncState>({ count: 0, dnd: false })
-
-  getState().then(setState)
-
-  subprocess(
-    ["swaync-client", "--subscribe"],
-    () => getState().then(setState),
-  )
-
-  const tooltip = state(s => [
-    `${s.count} notification${s.count !== 1 ? "s" : ""}`,
-    `Do Not Disturb: ${s.dnd ? "on" : "off"}`,
-    "────────────────",
-    "Left · toggle panel",
-    "Right · clear all",
-  ].join("\n"))
+  const label = createComputed(() => `${notifIcon(count(), dnd())} ${count()}`)
 
   return (
-    <BubbleButton
+    <Bubble
       name="notifications"
       tooltip={tooltip}
-      onLeftClick={() => execAsync("swaync-client -t -sw")}
-      onRightClick={() => execAsync("swaync-client -C")}
-    >
-      <label label={state(s => `${icon(s)} ${s.count}`)} />
-    </BubbleButton>
+      label={label}
+      onLeftClick={togglePanel}
+      onRightClick={clearAll}
+    />
   )
 }

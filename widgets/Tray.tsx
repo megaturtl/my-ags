@@ -1,16 +1,10 @@
-import AstalTray from "gi://AstalTray"
-import { createBinding } from "ags"
-import { For } from "ags"
+import { createBinding, For } from "ags"
 import { Gtk } from "ags/gtk4"
+import { items, type TrayItem as Item } from "../services/tray"
+import { createRawClickGesture } from "../lib/gestures"
 
-const tray = AstalTray.get_default()
-
-function TrayItem({ item }: { item: AstalTray.TrayItem }) {
-  const gesture = new Gtk.GestureClick()
-  gesture.button = 0
-  gesture.connect("pressed", () => {
-    const button = gesture.get_current_button()
-    const widget = gesture.get_widget()
+function TrayItem({ item }: { item: Item }) {
+  const gesture = createRawClickGesture((button, widget) => {
     if (button === 1 && !item.isMenu) item.activate(0, 0)
     if (button === 3 && widget) {
       const model = item.get_menu_model()
@@ -36,12 +30,10 @@ function TrayItem({ item }: { item: AstalTray.TrayItem }) {
 }
 
 export default function Tray() {
-  const items = createBinding(tray, "items")
-
   return (
     <box cssClasses={["bubble", "tray"]}>
       <For each={items}>
-        {(item: AstalTray.TrayItem) => <TrayItem item={item} />}
+        {(item: Item) => <TrayItem item={item} />}
       </For>
     </box>
   )

@@ -1,98 +1,48 @@
-import AstalHyprland from "gi://AstalHyprland"
-import { createBinding } from "ags"
-import { For } from "ags"
-import { BubbleButton } from "./BubbleButton"
+import { createComputed, For } from "ags"
+import { windowIcon } from "../lib/pure"
+import { workspaces, focusedWorkspace, clients, dispatch } from "../services/hyprland"
+import { PERSISTENT_WORKSPACES } from "../config"
+import { Bubble } from "./Bubble"
 
-const hyprland = AstalHyprland.get_default()
-
-// Matches waybar's window-rewrite rules
-function windowIcon(client: AstalHyprland.Client): string {
-  const cls = client.get_class?.() ?? ""
-  const title = client.get_title?.() ?? ""
-
-  if (/bitwarden/i.test(cls)) return "   "
-  if (/stremio/i.test(cls)) return " 󰎁 "
-  if (/firefox|librewolf/i.test(cls)) return " 󰈹 "
-  if (/zen/i.test(cls)) return " 󰈹 "
-  if (/kitty|konsole|ghostty|wezterm/i.test(cls)) return "  "
-  if (/thunderbird/i.test(cls)) return "   "
-  if (/gmail/i.test(title)) return " 󰊫 "
-  if (/discord|webcord|vesktop/i.test(cls)) return "  "
-  if (/youtube/i.test(title)) return "   "
-  if (/vlc/i.test(cls)) return " 󰕼 "
-  if (/spotify/i.test(cls)) return " 󰓇 "
-  if (/minecraft/i.test(cls)) return " 󰍳 "
-  if (/vscode|codium/i.test(cls)) return " 󰨞 "
-  if (/github/i.test(title)) return " 󰊤 "
-  if (/nvim/i.test(title)) return "  "
-  if (/vim/i.test(title)) return "  "
-  if (/jetbrains-idea/i.test(cls)) return "  "
-  if (/polkit/i.test(cls)) return " 󰒃 "
-  if (/pavucontrol|pwvucontrol/i.test(cls)) return " 󱡫 "
-  if (/steam/i.test(cls)) return " 󰓓 "
-  if (/dolphin|thunar|nemo/i.test(cls)) return " 󰉋 "
-  if (/gimp/i.test(cls)) return "  "
-  if (/tauon|audacious/i.test(cls)) return " 󰝚 "
-  if (/electron/i.test(cls)) return " 󰠮 "
-  return ""
-}
-
-const PERSISTENT_WORKSPACES = [1, 2, 3, 4, 5]
-
-function Workspace({ id }: { id: number }) {
-  const workspaces = createBinding(hyprland, "workspaces")
-  const focusedWs = createBinding(hyprland, "focusedWorkspace")
-  const clients = createBinding(hyprland, "clients")
-
-  const isActive = focusedWs(ws => ws?.get_id() === id)
-  const isEmpty = clients(cs => !cs.some(c => c.get_workspace()?.get_id() === id))
-
-  const icons = clients(cs =>
-    cs
-      .filter(c => c.get_workspace()?.get_id() === id)
-      .map(windowIcon)
-      .join("")
-  )
-
-  const name = focusedWs(ws => {
-  const active = ws?.get_id() === id
-  const empty = !clients.get().some(c => c.get_workspace()?.get_id() === id)
-  return `workspace ${active ? "active" : ""} ${empty ? "empty" : ""}`.trim()
+const allIds = workspaces.as(ws => {
+  const active = ws.map(w => w.get_id())
+  return [...new Set([...PERSISTENT_WORKSPACES, ...active])].sort((a, b) => a - b)
 })
 
-  const tooltip = icons(i =>
-    i ? `Workspace ${id}\n${i.trim()}` : `Workspace ${id}`
+function Workspace({ id }: { id: number }) {
+  const isActive = focusedWorkspace(ws => ws?.get_id() === id)
+  const idClients = clients(cs => cs.filter(c => c.get_workspace()?.get_id() === id))
+  const isEmpty = idClients(cs => cs.length === 0)
+
+  const icons = idClients(cs =>
+    cs.map(c => windowIcon(c.get_class?.() ?? "", c.get_title?.() ?? "")).join(""),
   )
 
+  const name = createComputed(() => {
+    const parts = ["workspace"]
+    if (isActive()) parts.push("active")
+    if (isEmpty()) parts.push("empty")
+    return parts.join(" ")
+  })
+
+  const tooltip = icons(i => i ? `Workspace ${id}\n${i.trim()}` : `Workspace ${id}`)
+  const label = icons(i => i ? `${id}${i}` : String(id))
+
   return (
-    <BubbleButton
+    <Bubble
       name={name}
       tooltip={tooltip}
-      onLeftClick={() => hyprland.dispatch("workspace", String(id))}
-      onScroll={(dy) => {
-        if (dy > 0) hyprland.dispatch("workspace", "+1")
-        else hyprland.dispatch("workspace", "-1")
-      }}
-    >
-      <label label={icons(i => i ? `${id}${i}` : String(id))} />
-    </BubbleButton>
+      label={label}
+      onLeftClick={() => dispatch("workspace", String(id))}
+      onScroll={(dy) => dispatch("workspace", dy > 0 ? "+1" : "-1")}
+    />
   )
 }
 
 export default function Workspaces() {
-  const allWorkspaces = createBinding(hyprland, "workspaces").as(ws => {
-    // Get IDs of all currently existing workspaces
-    const activeIds = ws.map(w => w.get_id())
-    
-    // Merge with persistent workspaces
-    const merged = [...new Set([...PERSISTENT_WORKSPACES, ...activeIds])]
-    
-    return merged.sort((a, b) => a - b)
-  })
-
   return (
     <box cssClasses={["workspaces"]}>
-      <For each={allWorkspaces}>
+      <For each={allIds}>
         {(id: number) => <Workspace id={id} />}
       </For>
     </box>
