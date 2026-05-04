@@ -1,6 +1,6 @@
 import { execAsync, subprocess } from "ags/process"
 import { createState } from "ags"
-import { Gtk } from "ags/gtk4"
+import { BubbleButton } from "./BubbleButton"
 
 type SwayncState = {
   count: number
@@ -31,20 +31,22 @@ export default function Notifications() {
     () => getState().then(setState),
   )
 
-  const gesture = new Gtk.GestureClick()
-  gesture.button = 0
-  gesture.connect("pressed", (_gesture: Gtk.GestureClick, _nPress: number, _x: number, _y: number) => {
-    const button = gesture.get_current_button()
-    if (button === 1) execAsync("swaync-client -t -sw")
-    if (button === 3) execAsync("swaync-client -C")
-  })
+  const tooltip = state(s => [
+    `${s.count} notification${s.count !== 1 ? "s" : ""}`,
+    `Do Not Disturb: ${s.dnd ? "on" : "off"}`,
+    "────────────────",
+    "Left · toggle panel",
+    "Right · clear all",
+  ].join("\n"))
 
   return (
-    <button
-      cssClasses={["bubble", "notifications"]}
-      onClicked={() => execAsync("swaync-client -t -sw")}
-      label={state(s => `${icon(s)}  ${s.count}`)}
-      $={(self) => self.add_controller(gesture)}
-    />
+    <BubbleButton
+      name="notifications"
+      tooltip={tooltip}
+      onLeftClick={() => execAsync("swaync-client -t -sw")}
+      onRightClick={() => execAsync("swaync-client -C")}
+    >
+      <label label={state(s => `${icon(s)}  ${s.count}`)} />
+    </BubbleButton>
   )
 }

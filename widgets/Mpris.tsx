@@ -1,7 +1,7 @@
 import AstalMpris from "gi://AstalMpris"
-import { createBinding } from "ags"
+import { createBinding, createComputed } from "ags"
 import { For } from "ags"
-import { Gtk } from "ags/gtk4"
+import { BubbleButton } from "./BubbleButton"
 
 const mpris = AstalMpris.get_default()
 
@@ -16,33 +16,39 @@ function Player({ player }: { player: AstalMpris.Player }) {
   const status = createBinding(player, "playbackStatus")
   const title = createBinding(player, "title")
   const artist = createBinding(player, "artist")
+  const album = createBinding(player, "album")
 
-  const label = status.as(() => {
-    const t = title.peek() ?? ""
-    const a = artist.peek() ?? ""
+  const label = createComputed(() => {
+    const t = title() ?? ""
+    const a = artist() ?? ""
+    const s = status()
     const icon = playerIcon(player)
-    const statusIcon = status.peek() === AstalMpris.PlaybackStatus.PLAYING ? "" : ""
+    const statusIcon = s === AstalMpris.PlaybackStatus.PLAYING ? "" : ""
     const dynamic = [a, t].filter(Boolean).join(" - ")
     const truncated = dynamic.length > 32 ? dynamic.slice(0, 32) + "…" : dynamic
     return `${icon}  ${truncated}  ${statusIcon}`
   })
 
-  const gesture = new Gtk.GestureClick()
-  gesture.button = 0
-  gesture.connect("pressed", (_g: Gtk.GestureClick, _n: number, _x: number, _y: number) => {
-    const button = gesture.get_current_button()
-    if (button === 1) player.play_pause()
-    if (button === 3) player.next()
-    if (button === 2) player.previous()
-  })
+  const tooltip = createComputed(() => [
+    title() ?? "",
+    artist() ?? "",
+    album() ?? "",
+    "────────────────",
+    "Left · play/pause",
+    "Middle · previous",
+    "Right · next",
+  ].filter(Boolean).join("\n"))
 
   return (
-    <button
-      cssClasses={["bubble", "mpris"]}
-      $={(self) => self.add_controller(gesture)}
+    <BubbleButton
+      name="mpris"
+      tooltip={tooltip}
+      onLeftClick={() => player.play_pause()}
+      onMiddleClick={() => player.previous()}
+      onRightClick={() => player.next()}
     >
       <label label={label} />
-    </button>
+    </BubbleButton>
   )
 }
 

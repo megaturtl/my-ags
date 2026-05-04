@@ -1,10 +1,7 @@
+@use "mixins" as *;
+
 .power {
   color: var(--red);
   padding: 0 10px;
-  transition: all 200ms ease;
-
-  &:hover {
-    background: var(--red);
-    color: var(--base);
-  }
+  @include bubble-hover(var(--red), var(--base));
 }

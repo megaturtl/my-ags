@@ -8,7 +8,7 @@ const tray = AstalTray.get_default()
 function TrayItem({ item }: { item: AstalTray.TrayItem }) {
   const gesture = new Gtk.GestureClick()
   gesture.button = 0
-  gesture.connect("pressed", (_gesture: Gtk.GestureClick, _nPress: number, _x: number, _y: number) => {
+  gesture.connect("pressed", () => {
     const button = gesture.get_current_button()
     const widget = gesture.get_widget()
     if (button === 1 && !item.isMenu) item.activate(0, 0)

@@ -1,6 +1,8 @@
 import AstalNetwork from "gi://AstalNetwork"
 import { readFile } from "ags/file"
 import { createPoll } from "ags/time"
+import { execAsync } from "ags/process"
+import { BubbleButton } from "./BubbleButton"
 
 const network = AstalNetwork.get_default()
 
@@ -54,12 +56,40 @@ function getLabel(): string {
   return "󰤭  offline"
 }
 
+async function getTooltip(): Promise<string> {
+  const wifi = network.wifi
+  const wired = network.wired
+
+  if (wired?.get_device()?.state === AstalNetwork.DeviceState.ACTIVATED) {
+    const iface = wired.get_device()?.get_iface() ?? "eth"
+    try {
+      const ip = await execAsync(`ip -4 addr show ${iface} | grep 'inet ' | awk '{print $2}'`)
+      return `${iface}\n${ip.trim()}`
+    } catch {
+      return iface
+    }
+  }
+
+  if (wifi) {
+    const iface = wifi.get_device()?.get_iface() ?? ""
+    try {
+      const ip = await execAsync(`ip -4 addr show ${iface} | grep 'inet ' | awk '{print $2}'`)
+      return `${wifi.ssid ?? "unknown"} · ${iface}\nIP: ${ip.trim()}\nSignal: ${wifi.strength}%`
+    } catch {
+      return `${wifi.ssid ?? "unknown"} · ${iface}\nSignal: ${wifi.strength}%`
+    }
+  }
+
+  return "Not connected"
+}
+
 export default function Network() {
   const label = createPoll("", 1000, getLabel)
+  const tooltip = createPoll("", 5000, getTooltip)
 
   return (
-    <box cssClasses={["bubble", "network"]}>
+    <BubbleButton name="network" tooltip={tooltip}>
       <label label={label} />
-    </box>
+    </BubbleButton>
   )
 }

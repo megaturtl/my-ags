@@ -1,14 +1,14 @@
 import app from "ags/gtk4/app"
 import { Astal, Gdk, Gtk } from "ags/gtk4"
-import Clock from "../widget/Clock"
-import Network from "../widget/Network"
-import Notifications from "../widget/Notifications"
-import Tray from "../widget/Tray"
-import Power from "../widget/Power"
-import Hardware from "../widget/Hardware"
-import Workspaces from "../widget/Workspaces"
-import Mpris from "../widget/Mpris"
-import Audio from "../widget/Audio"
+import Clock from "../widgets/Clock"
+import Network from "../widgets/Network"
+import Notifications from "../widgets/Notifications"
+import Tray from "../widgets/Tray"
+import Power from "../widgets/Power"
+import Hardware from "../widgets/Hardware"
+import Workspaces from "../widgets/Workspaces"
+import Mpris from "../widgets/Mpris"
+import Audio from "../widgets/Audio"
 
 export default function Bar(gdkmonitor: Gdk.Monitor) {
   const { TOP, LEFT, RIGHT } = Astal.WindowAnchor

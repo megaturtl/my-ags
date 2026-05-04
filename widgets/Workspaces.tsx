@@ -14,9 +14,9 @@ function windowIcon(client: AstalHyprland.Client): string {
   if (/firefox|librewolf/i.test(cls)) return " 󰈹 "
   if (/zen/i.test(cls)) return " 󰈹 "
   if (/kitty|konsole|ghostty|wezterm/i.test(cls)) return "  "
-  if (/thunderbird/i.test(cls)) return "  "
+  if (/thunderbird/i.test(cls)) return "   "
   if (/gmail/i.test(title)) return " 󰊫 "
-  if (/discord|webcord|vesktop/i.test(cls)) return "  "
+  if (/discord|webcord|vesktop/i.test(cls)) return "  "
   if (/youtube/i.test(title)) return "   "
   if (/vlc/i.test(cls)) return " 󰕼 "
   if (/spotify/i.test(cls)) return " 󰓇 "
@@ -61,9 +61,14 @@ function Workspace({ id }: { id: number }) {
     ...(isEmpty.peek() ? ["empty"] : []),
   ])
 
+  const tooltip = icons.as(i =>
+    i ? `Workspace ${id}\n${i.trim()}` : `Workspace ${id}`
+  )
+
   return (
     <button
       cssClasses={cssClasses}
+      tooltipText={tooltip}
       onClicked={() => hyprland.dispatch("workspace", String(id))}
       visible={exists.as(e => e || PERSISTENT_WORKSPACES.includes(id))}
     >
