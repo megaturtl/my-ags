@@ -36,10 +36,17 @@ export function wifiIcon(strength: number): string {
 
 // Always returns 4 chars so the speed section never changes width
 export function formatSpeed(bytesPerSec: number): string {
-  if (bytesPerSec >= 10 * 1024 * 1024) return `${Math.round(bytesPerSec / 1024 / 1024)}M`.padStart(4)
-  if (bytesPerSec >= 1024 * 1024) return `${(bytesPerSec / 1024 / 1024).toFixed(1)}M`.padStart(4)
-  if (bytesPerSec >= 1024) return `${Math.round(bytesPerSec / 1024)}K`.padStart(4)
-  return `${bytesPerSec}B`.padStart(4)
+  if (bytesPerSec >= 1024 * 1024) {
+    const m = bytesPerSec / 1024 / 1024
+    // 10.0+ => "123M" or "10.M" — use toFixed to always get 4 chars before unit
+    return m >= 100 ? `${Math.round(m)}M` : m >= 10 ? `${m.toFixed(1)}M` : `${m.toFixed(2)}M`
+  }
+  if (bytesPerSec >= 1024) {
+    const k = bytesPerSec / 1024
+    return k >= 100 ? `${Math.round(k)}K` : k >= 10 ? `${k.toFixed(1)}K` : `${k.toFixed(2)}K`
+  }
+  const b = Math.round(bytesPerSec)
+  return b >= 100 ? `${b}B` : b >= 10 ? ` ${b}B` : `  ${b}B`
 }
 
 export function volumeIcon(volume: number, muted: boolean): string {

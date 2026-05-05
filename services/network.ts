@@ -69,7 +69,7 @@ export const state = createExternal<NetState>(offline, (set) => {
 export const label = state.as(s => {
   if (s.kind === "wired") return "󰈀 LAN"
   if (s.kind === "offline") return "󰤭 Offline"
-  return `${wifiIcon(s.strength)}  ⇣${formatSpeed(s.rxRate)} ⇡${formatSpeed(s.txRate)}`
+  return `${wifiIcon(s.strength)}  ⇣ ${formatSpeed(s.rxRate)} ⇡ ${formatSpeed(s.txRate)}`
 })
 
 // IP lookup is not on a poll interval — it runs once when the iface
