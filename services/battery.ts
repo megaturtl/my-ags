@@ -12,6 +12,7 @@ export type BatteryState = {
   percentage: number
   charging: boolean
   profile: string
+  wattage: number
   timeToEmpty: number
   timeToFull: number
 }
@@ -20,6 +21,7 @@ const initial: BatteryState = {
   percentage: 0,
   charging: false,
   profile: "balanced",
+  wattage: 0,
   timeToEmpty: 0,
   timeToFull: 0,
 }
@@ -27,8 +29,9 @@ const initial: BatteryState = {
 export const state = createExternal<BatteryState>(initial, (set) => {
   return tick.subscribe(() => {
     set({
-      percentage: Math.round(device?.percentage ?? 0),
+      percentage: Math.round((device?.percentage ?? 0) * 100),
       charging: device?.charging ?? false,
+      wattage: device?.energy_rate ?? 0,
       profile: profiles?.activeProfile ?? "balanced",
       timeToEmpty: device?.timeToEmpty ?? 0,
       timeToFull: device?.timeToFull ?? 0,
@@ -75,8 +78,10 @@ export const tooltip = state.as(s => {
   const timeStr = s.charging
     ? (s.timeToFull > 0 ? `Full in ${formatTime(s.timeToFull)}` : "Charging")
     : (s.timeToEmpty > 0 ? `${formatTime(s.timeToEmpty)} remaining` : "")
+
   return [
     `Battery: ${s.percentage}%`,
+    `Energy: ${s.wattage}W`,
     timeStr,
     `Profile: ${s.profile}`,
   ].filter(Boolean).join("\n")
