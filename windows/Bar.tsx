@@ -10,6 +10,7 @@ import Workspaces from "../widgets/Workspaces"
 import Mpris from "../widgets/Mpris"
 import Audio from "../widgets/Audio"
 import Vpn from "../widgets/Vpn"
+import Battery from "../widgets/Battery"
 
 export default function Bar(gdkmonitor: Gdk.Monitor) {
   const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
@@ -36,6 +37,7 @@ export default function Bar(gdkmonitor: Gdk.Monitor) {
         </box>
         <box $type="end" hexpand halign={Gtk.Align.END}>
           <Hardware />
+          <Battery />
           <Vpn />
           <Network />
           <Audio />
