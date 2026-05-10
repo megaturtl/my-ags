@@ -1,5 +1,6 @@
 import app from "ags/gtk4/app"
 import { Astal, Gdk } from "ags/gtk4"
+import { Audio } from "./widgets/Audio"
 import { Clock } from "./widgets/Clock"
 import { Power } from "./widgets/Power"
 
@@ -21,6 +22,7 @@ export default function Bar(gdkmonitor: Gdk.Monitor) {
           <Clock />
         </box>
         <box $type="end">
+          <Audio />
           <Power />
         </box>
       </centerbox>
