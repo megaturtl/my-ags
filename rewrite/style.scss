@@ -1,0 +1,11 @@
+// https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
+$fg-color: #{"@theme_fg_color"};
+$bg-color: #{"@theme_bg_color"};
+
+window {
+  background-color: $bg-color;
+  color: $fg-color;
+  padding: 4px;
+  font-weight: 500;
+  font-family: "JetBrainsMono Nerd Font";
+}
