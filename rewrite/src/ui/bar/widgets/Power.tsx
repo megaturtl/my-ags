@@ -1,5 +1,6 @@
 import { Gtk } from "ags/gtk4"
 import { execAsync } from "ags/process"
+import { onRightClick } from "../../../utils"
 
 export const Power = () => (
   <Gtk.Button
@@ -8,6 +9,6 @@ export const Power = () => (
     tooltipText={"Left · power menu (wlogout)\nRight · lock screen (hyprlock)"}
     onClicked={() => execAsync("wlogout")}
   >
-    <Gtk.GestureClick button={3} onPressed={() => execAsync("hyprlock")} />
+    {onRightClick(() => execAsync("hyprlock"))}
   </Gtk.Button>
 )

@@ -2,6 +2,7 @@ import { createBinding, createComputed } from "ags"
 import { Gtk } from "ags/gtk4"
 import { execAsync } from "ags/process"
 import AstalWp from "gi://AstalWp"
+import { DIVIDER, onRightClick, onVerticalScroll } from "../../../utils"
 
 const volumeIcon = (v: number, m: boolean) => {
   if (m) return "󰝟"
@@ -26,7 +27,7 @@ export const Audio = () => {
     [
       `Device: ${description()}`,
       `Muted: ${muted() ? "yes" : "no"}`,
-      "────────────────",
+      DIVIDER,
       "Left · open mixer",
       "Right · toggle mute",
       "Scroll · adjust volume",
@@ -40,18 +41,11 @@ export const Audio = () => {
       tooltipText={tooltip}
       onClicked={() => execAsync("pwvucontrol").catch(print)}
     >
-      <Gtk.GestureClick
-        button={3}
-        onPressed={() => speaker.set_mute(!speaker.get_mute())}
-      />
-      <Gtk.EventControllerScroll
-        flags={Gtk.EventControllerScrollFlags.VERTICAL}
-        onScroll={(_ctrl, _dx, dy) => {
-          const v = speaker.get_volume()
-          speaker.set_volume(Math.max(0, Math.min(1, v - dy * 0.05)))
-          return true
-        }}
-      />
+      {onRightClick(() => speaker.set_mute(!speaker.get_mute()))}
+      {onVerticalScroll(dy => {
+        const v = speaker.get_volume()
+        speaker.set_volume(Math.max(0, Math.min(1, v - dy * 0.05)))
+      })}
     </Gtk.Button>
   )
 }
