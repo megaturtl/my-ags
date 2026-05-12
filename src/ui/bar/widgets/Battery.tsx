@@ -5,6 +5,7 @@ import AstalPowerProfiles from "gi://AstalPowerProfiles"
 
 const device = AstalBattery.Device.get_default()
 const profiles = AstalPowerProfiles.get_default()
+
 const present = !!(device?.isBattery && device?.powerSupply)
 
 const batteryIcon = (pct: number, charging: boolean): string => {
@@ -32,6 +33,7 @@ const formatTime = (secs: number): string => {
 }
 
 const profileOrder = ["power-saver", "balanced", "performance"]
+
 const cycleProfile = () => {
   if (!profiles) return
   const idx = profileOrder.indexOf(profiles.activeProfile)
@@ -47,23 +49,23 @@ export const Battery = () => {
   const timeToFull = createBinding(device, "timeToFull")
   const profile = profiles ? createBinding(profiles, "activeProfile") : null
 
+  // percentage is 0.0-1.0, so multiply by 100 for display
+  const pct = createComputed(() => Math.round(percentage() * 100))
+
   const klass = createComputed(() => {
-    const pct = Math.round(percentage())
     if (charging()) return "battery charging"
-    if (pct <= 15) return "battery critical"
-    if (pct <= 30) return "battery low"
+    if (pct() <= 15) return "battery critical"
+    if (pct() <= 30) return "battery low"
     return "battery"
   })
 
-  const battLabel = createComputed(() => {
-    const pct = Math.round(percentage())
-    return `${batteryIcon(pct, charging())} ${pct}%`
-  })
+  const battLabel = createComputed(() =>
+    `${batteryIcon(pct(), charging())} ${pct()}%`
+  )
 
   const profileLabel = profile ? profile.as(profileIcon) : ""
 
   const tooltip = createComputed(() => {
-    const pct = Math.round(percentage())
     const c = charging()
     const p = profile?.() ?? "balanced"
     const timeStr = c
@@ -73,7 +75,7 @@ export const Battery = () => {
       : timeToEmpty() > 0
         ? `${formatTime(timeToEmpty())} remaining`
         : ""
-    return [`Battery: ${pct}%`, timeStr, `Profile: ${p}`]
+    return [`Battery: ${pct()}%`, timeStr, `Profile: ${p}`]
       .filter(Boolean)
       .join("\n")
   })
