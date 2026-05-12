@@ -8,27 +8,23 @@ import { tick } from "../../../utils"
 const wifiIcon = (s: number): string =>
   s > 80 ? "󰤨" : s > 60 ? "󰤥" : s > 40 ? "󰤢" : "󰤟"
 
-// Always returns 4 chars so the speed section never changes width
 const formatSpeed = (bps: number): string => {
-  if (bps >= 1024 * 1024) {
-    const m = bps / 1024 / 1024
-    return m >= 100
-      ? `${Math.round(m)}M`
-      : m >= 10
-        ? `${m.toFixed(1)}M`
-        : `${m.toFixed(2)}M`
-  }
-  if (bps >= 1024) {
-    const k = bps / 1024
-    return k >= 100
-      ? `${Math.round(k)}K`
-      : k >= 10
-        ? `${k.toFixed(1)}K`
-        : `${k.toFixed(2)}K`
-  }
-  const b = Math.round(bps)
-  return b >= 100 ? `${b}B` : b >= 10 ? ` ${b}B` : `  ${b}B`
-}
+  const format = (value: number, unit: string) => {
+    // If value is >= 100, will show 100.0 (5 chars)
+    // If value is < 100, will show 99.99 or 9.99 (5 chars)
+    let valStr: string;
+    if (value >= 100) {
+      valStr = value.toFixed(1); // e.g. "125.4"
+    } else {
+      valStr = value.toFixed(2).padStart(5); // e.g. "05.21"
+    }
+    return `${valStr}${unit}`; // Total length: 6 chars (e.g., "125.4M" or "05.21K")
+  };
+
+  if (bps >= 1024 * 1024) return format(bps / 1024 / 1024, "M");
+  if (bps >= 1024) return format(bps / 1024, "K");
+  return format(bps, "B");
+};
 
 const network = AstalNetwork.get_default()
 
