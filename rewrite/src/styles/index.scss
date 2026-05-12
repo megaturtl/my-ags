@@ -1,0 +1,14 @@
+@use "tokens";
+@use "themes/catppuccin-mocha";
+@use "bar";
+@use "widgets/audio";
+@use "widgets/battery";
+@use "widgets/clock";
+@use "widgets/hardware";
+@use "widgets/mpris";
+@use "widgets/network";
+@use "widgets/notifications";
+@use "widgets/power";
+@use "widgets/tray";
+@use "widgets/vpn";
+@use "widgets/workspaces";

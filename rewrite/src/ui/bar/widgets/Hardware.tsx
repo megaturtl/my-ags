@@ -144,7 +144,7 @@ export const Hardware = () => (
       <label class="temp" label={state.as((s) => `󰔏 ${pad3(s.tempC)}`)} />
       <label
         class="mem"
-        label={state.as((s) => ` ${pad3(s.memPct.toString())}%`)}
+        label={state.as((s) => ` ${pad3(s.memPct.toString())}%`)}
       />
     </box>
   </Gtk.Button>

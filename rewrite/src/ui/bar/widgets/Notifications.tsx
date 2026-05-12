@@ -26,6 +26,7 @@ const togglePanel = () => execAsync("swaync-client -t -sw").catch(() => {})
 const clearAll = () => execAsync("swaync-client -C").catch(() => {})
 
 export const Notifications = () => {
+  const klass = state.as((s) => (s.dnd ? "notifications dnd" : "notifications"))
   const label = state.as((s) => `${notifIcon(s.count, s.dnd)} ${s.count}`)
   const tooltip = createComputed(() => {
     const { count, dnd } = state()
@@ -40,7 +41,7 @@ export const Notifications = () => {
 
   return (
     <Gtk.Button
-      class="notifications"
+      class={klass}
       label={label}
       tooltipText={tooltip}
       onClicked={togglePanel}

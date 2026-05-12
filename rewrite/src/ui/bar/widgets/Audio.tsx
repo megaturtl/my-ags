@@ -34,9 +34,11 @@ export const Audio = () => {
     ].join("\n"),
   )
 
+  const klass = muted.as((m) => (m ? "audio muted" : "audio"))
+
   return (
     <Gtk.Button
-      class="audio"
+      class={klass}
       label={label}
       tooltipText={tooltip}
       onClicked={() => execAsync("pwvucontrol").catch(print)}
