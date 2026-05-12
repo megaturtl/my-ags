@@ -171,6 +171,7 @@ const Player = ({ player }: { player: AstalMpris.Player }) => {
       class="mpris"
       tooltipText={tooltip}
       onClicked={() => player.play_pause()}
+      halign={Gtk.Align.START}
     >
       {onMiddleClick(() => player.previous())}
       {onRightClick(() => player.next())}
