@@ -2,14 +2,7 @@ import { createBinding, createComputed } from "ags"
 import { Gtk } from "ags/gtk4"
 import { execAsync } from "ags/process"
 import AstalWp from "gi://AstalWp"
-import { DIVIDER, onRightClick, onVerticalScroll } from "../../../utils"
-
-const volumeIcon = (v: number, m: boolean) => {
-  if (m) return "󰝟"
-  if (v > 0.66) return "󰕾"
-  if (v > 0.33) return "󰖀"
-  return "󰕿"
-}
+import { DIVIDER, onRightClick, onVerticalScroll, volumeIcon } from "../../../utils"
 
 const speaker = AstalWp.get_default()?.get_default_speaker() ?? null
 

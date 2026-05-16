@@ -1,5 +1,8 @@
 export const TICK_INTERVAL_MS = 1000
 
+// How long the OSD stays visible after the most recent change event
+export const OSD_TIMEOUT_MS = 1500
+
 // First existing path wins (used by Hardware for CPU temperature)
 export const THERMAL_PATHS = [
   "/sys/class/thermal/thermal_zone2/temp",
