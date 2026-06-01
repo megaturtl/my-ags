@@ -12,7 +12,7 @@ const windowIcon = (cls: string, title: string): string => {
   if (/stremio/i.test(cls)) return " 󰎁 "
   if (/firefox|librewolf/i.test(cls)) return " 󰈹 "
   if (/zen/i.test(cls)) return " 󰈹 "
-  if (/kitty|konsole|ghostty|wezterm/i.test(cls)) return "  "
+  if (/kitty|konsole|ghostty|wezterm|foot|footclient/i.test(cls)) return "  "
   if (/thunderbird/i.test(cls)) return "   "
   if (/gmail/i.test(title)) return " 󰊫 "
   if (/discord|webcord|vesktop/i.test(cls)) return "  "
