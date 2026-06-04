@@ -30,7 +30,7 @@ const windowIcon = (cls: string, title: string): string => {
   if (/steam/i.test(cls)) return " 󰓓 "
   if (/dolphin|thunar|nemo/i.test(cls)) return " 󰉋 "
   if (/gimp/i.test(cls)) return "  "
-  if (/tauon|audacious/i.test(cls)) return " 󰝚 "
+  if (/tauon|feishin|audacious/i.test(cls)) return " 󰝚 "
   if (/logseq/i.test(cls)) return " 󰠮 "
   return ""
 }
