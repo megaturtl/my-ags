@@ -8,7 +8,15 @@ app.start({
   css: style,
   main() {
     const monitors = app.get_monitors()
-    monitors.map(Bar)
-    monitors.map(Osd)
+
+    if (monitors.length > 0) {
+      const firstMonitor = monitors[0]
+
+      // Show bar only on monitor 1
+      Bar(firstMonitor)
+
+      // Show OSD on all monitors
+      monitors.map(Osd)
+    }
   },
 })
