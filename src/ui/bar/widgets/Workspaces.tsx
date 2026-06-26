@@ -19,7 +19,7 @@ const windowIcon = (cls: string, title: string): string => {
   if (/youtube/i.test(title)) return "   "
   if (/vlc/i.test(cls)) return " 󰕼 "
   if (/spotify/i.test(cls)) return " 󰓇 "
-  if (/minecraft|prismlauncher/i.test(cls)) return " 󰍳 "
+  if (/minecraft|prismlauncher|waywall/i.test(cls)) return " 󰍳 "
   if (/vscode|codium/i.test(cls)) return " 󰨞 "
   if (/github/i.test(title)) return " 󰊤 "
   if (/nvim/i.test(title)) return "  "
