@@ -9,7 +9,6 @@ import { Network } from "./widgets/Network"
 import { Notifications } from "./widgets/Notifications"
 import { Power } from "./widgets/Power"
 import { Tray } from "./widgets/Tray"
-import { Vpn } from "./widgets/Vpn"
 import { Workspaces } from "./widgets/Workspaces"
 
 export default function Bar(gdkmonitor: Gdk.Monitor) {
@@ -38,7 +37,6 @@ export default function Bar(gdkmonitor: Gdk.Monitor) {
         <box $type="end">
           <Hardware />
           <Battery />
-          <Vpn />
           <Network />
           <Audio />
           <Power />
