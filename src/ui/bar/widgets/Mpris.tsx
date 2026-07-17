@@ -1,7 +1,7 @@
 import { Accessor, createBinding, createComputed, createState, For } from "ags"
 import { Gtk } from "ags/gtk4"
 import AstalMpris from "gi://AstalMpris"
-import { DIVIDER, onMiddleClick, onRightClick } from "../../../utils"
+import { DIVIDER, onMiddleClick, onRightClick, onVerticalScroll } from "../../../utils"
 
 const playerIcon = (busName: string): string =>
   /spotify/i.test(busName) ? "󰓇" : /vlc/i.test(busName) ? "󰕼" : "󰝚"
@@ -63,6 +63,18 @@ createBinding(mpris, "players").subscribe(() => {
   rebind(ps)
 })
 rebind(initPlayers)
+
+const SEEK_RESOLUTION = 5 // seconds
+
+const seek = (p: AstalMpris.Player, forward: boolean = true): void => {
+  if (!p.canSeek) return
+
+  if (forward) {
+    p.position = Math.min(p.position + SEEK_RESOLUTION, p.length - 1)
+  } else {
+    p.position = Math.max(p.position - SEEK_RESOLUTION, 0)
+  }
+}
 
 const Marquee = ({
   label,
@@ -175,6 +187,10 @@ const Player = ({ player }: { player: AstalMpris.Player }) => {
     >
       {onMiddleClick(() => player.previous())}
       {onRightClick(() => player.next())}
+      {onVerticalScroll(dy => {
+        if (dy > 0) seek(player, true)
+        else if (dy < 0) seek(player, false)
+      })}
       <box orientation={Gtk.Orientation.VERTICAL} spacing={0}>
         <box class="mpris-content" hexpand vexpand valign={Gtk.Align.CENTER}>
           <label label={`${playerIcon(player.get_bus_name() ?? "")}  `} />
