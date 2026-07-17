@@ -155,11 +155,18 @@ const Marquee = ({
   </scrolledwindow>
 )
 
+const formatTime = (secs: number | null) => {
+  if (secs == null) return "";
+  return `${Math.floor(secs / 60)}:${String(Math.floor(secs % 60)).padStart(2, '0')}`;
+};
+
 const Player = ({ player }: { player: AstalMpris.Player }) => {
   const title = createBinding(player, "title")
   const artist = createBinding(player, "artist")
   const album = createBinding(player, "album")
   const status = createBinding(player, "playbackStatus")
+  const position = createBinding(player, "position")
+  const length = createBinding(player, "length")
 
   const scrollText = createComputed(() =>
     [artist() ?? "", title() ?? ""].filter(Boolean).join(" - "),
@@ -169,6 +176,7 @@ const Player = ({ player }: { player: AstalMpris.Player }) => {
       title() ?? "",
       artist() ?? "",
       album() ?? "",
+      `${formatTime(position())}/${formatTime(length())}`,
       DIVIDER,
       "Left · play/pause",
       "Middle · previous",

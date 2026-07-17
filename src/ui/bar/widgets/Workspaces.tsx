@@ -32,6 +32,7 @@ const windowIcon = (cls: string, title: string): string => {
   if (/gimp/i.test(cls)) return "  "
   if (/tauon|feishin|audacious/i.test(cls)) return " 󰝚 "
   if (/logseq|affine|obsidian/i.test(cls)) return " 󰠮 "
+  if (/obsproject/i.test(cls)) return " 󰄄 "
   return ""
 }
 
