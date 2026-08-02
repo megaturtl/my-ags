@@ -106,9 +106,15 @@ const Workspace = ({ id }: { id: number }) => {
       class={klass}
       label={label}
       tooltipText={tooltip}
-      onClicked={() => hyprland.dispatch("workspace", String(id))}
+      onClicked={() =>
+        hyprland.message(`dispatch hl.dsp.focus({ workspace = "${id}" })`)
+      }
     >
-      {onVerticalScroll(dy => hyprland.dispatch("workspace", dy > 0 ? "+1" : "-1"))}
+      {onVerticalScroll(dy =>
+        hyprland.message(
+          `dispatch hl.dsp.focus({ workspace = "${dy > 0 ? "+1" : "-1"}" })`,
+        )
+      )}
     </Gtk.Button>
   )
 }
