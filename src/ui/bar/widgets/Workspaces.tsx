@@ -1,11 +1,23 @@
-import { createBinding, createComputed, createExternal, For } from "ags"
+import { createComputed, For } from "ags"
 import { Gtk } from "ags/gtk4"
-import AstalHyprland from "gi://AstalHyprland"
-import GObject from "gi://GObject?version=2.0"
+import { execAsync } from "ags/process"
+import { createPoll } from "ags/time"
+import GLib from "gi://GLib"
 import { PERSISTENT_WORKSPACES } from "../../../config"
 import { onVerticalScroll } from "../../../utils"
 
-const { connect, disconnect } = GObject.Object.prototype
+type Client = {
+  class: string
+  title: string
+}
+
+type Workspace = {
+  id: number
+  clients: Client[]
+  focused: boolean
+}
+
+const isNiri = GLib.getenv("NIRI_SOCKET") !== null
 
 const windowIcon = (cls: string, title: string): string => {
   if (/bitwarden/i.test(cls)) return "  "
@@ -36,70 +48,77 @@ const windowIcon = (cls: string, title: string): string => {
   return ""
 }
 
-const hyprland = AstalHyprland.get_default()
-const workspaces = createBinding(hyprland, "workspaces")
-const focusedWorkspace = createBinding(hyprland, "focusedWorkspace")
+const getHyprlandWorkspaces = async (): Promise<Workspace[]> => {
+  const [workspaces, active, clients] = await Promise.all([
+    execAsync("hyprctl -j workspaces").then(JSON.parse),
+    execAsync("hyprctl -j activeworkspace").then(JSON.parse),
+    execAsync("hyprctl -j clients").then(JSON.parse),
+  ])
 
-const clients = createExternal(hyprland.get_clients(), (set) => {
-  const update = () => set([...hyprland.get_clients()])
-  const watchers = new Map<AstalHyprland.Client, number>()
+  return workspaces.map(({ id }: { id: number }) => ({
+    id,
+    focused: id === active.id,
+    clients: clients
+      .filter(({ workspace }: { workspace: { id: number } }) => workspace.id === id)
+      .map(({ class: cls, title }: { class: string; title: string }) => ({
+        class: cls,
+        title,
+      })),
+  }))
+}
 
-  const watch = (c: AstalHyprland.Client) => {
-    if (!watchers.has(c)) {
-      watchers.set(c, connect.call(c, "notify::workspace", update))
-    }
-  }
+const getNiriWorkspaces = async (): Promise<Workspace[]> => {
+  const [workspaces, windows] = await Promise.all([
+    execAsync("niri msg -j workspaces").then(JSON.parse),
+    execAsync("niri msg -j windows").then(JSON.parse),
+  ])
+  const focused = workspaces.find(({ is_focused }: { is_focused: boolean }) => is_focused)
+  const currentOutput = focused?.output
 
-  hyprland.get_clients().forEach(watch)
-  const id = connect.call(hyprland, "notify::clients", () => {
-    const current = hyprland.get_clients()
-    for (const [c, sigId] of watchers) {
-      if (!current.includes(c)) {
-        disconnect.call(c, sigId)
-        watchers.delete(c)
-      }
-    }
-    current.forEach(watch)
-    update()
-  })
+  return workspaces
+    .filter(({ output }: { output: string | null }) => output === currentOutput)
+    .map(({ id, idx, is_focused }: { id: number; idx: number; is_focused: boolean }) => ({
+      id: idx,
+      focused: is_focused,
+      clients: windows
+        .filter(({ workspace_id }: { workspace_id: number }) => workspace_id === id)
+        .map(({ app_id, title }: { app_id: string | null; title: string }) => ({
+          class: app_id ?? "",
+          title,
+        })),
+    }))
+}
 
-  return () => {
-    disconnect.call(hyprland, id)
-    watchers.forEach((sigId, c) => disconnect.call(c, sigId))
-    watchers.clear()
-  }
-})
+const workspaces = createPoll<Workspace[]>([], 1000, () =>
+  (isNiri ? getNiriWorkspaces() : getHyprlandWorkspaces()).catch(() => []),
+)
 
-const allIds = workspaces.as((ws) => {
-  const active = ws.map((w) => w.get_id())
-  return [...new Set([...PERSISTENT_WORKSPACES, ...active])].sort(
+const allIds = workspaces.as((current) =>
+  [...new Set([...PERSISTENT_WORKSPACES, ...current.map(({ id }) => id)])].sort(
     (a, b) => a - b,
-  )
-})
+  ),
+)
 
 const Workspace = ({ id }: { id: number }) => {
-  const isActive = focusedWorkspace.as((ws) => ws?.get_id() === id)
-  const idClients = clients.as((cs) =>
-    cs.filter((c) => c.get_workspace()?.get_id() === id),
+  const workspace = workspaces.as((current) =>
+    current.find((currentWorkspace) => currentWorkspace.id === id),
   )
-  const isEmpty = idClients.as((cs) => cs.length === 0)
-  const icons = idClients.as((cs) =>
-    cs
-      .map((c) => windowIcon(c.get_class?.() ?? "", c.get_title?.() ?? ""))
-      .join(""),
+  const icons = workspace.as((current) =>
+    current?.clients
+      .map(({ class: cls, title }) => windowIcon(cls, title))
+      .join("") ?? "",
   )
-
   const klass = createComputed(() => {
+    const current = workspace()
     const parts = ["workspace"]
-    if (isActive()) parts.push("active")
-    if (isEmpty()) parts.push("empty")
+    if (current?.focused) parts.push("active")
+    if (!current?.clients.length) parts.push("empty")
     return parts.join(" ")
   })
-
-  const tooltip = icons.as((i) =>
-    i ? `Workspace ${id}\n${i.trim()}` : `Workspace ${id}`,
+  const tooltip = icons.as((current) =>
+    current ? `Workspace ${id}\n${current.trim()}` : `Workspace ${id}`,
   )
-  const label = icons.as((i) => (i ? `${id}${i}` : String(id)))
+  const label = icons.as((current) => (current ? `${id}${current}` : String(id)))
 
   return (
     <Gtk.Button
@@ -107,13 +126,19 @@ const Workspace = ({ id }: { id: number }) => {
       label={label}
       tooltipText={tooltip}
       onClicked={() =>
-        hyprland.message(`dispatch hl.dsp.focus({ workspace = "${id}" })`)
+        execAsync(
+          isNiri
+            ? `niri msg action focus-workspace ${id}`
+            : `hyprctl dispatch workspace ${id}`,
+        ).catch(print)
       }
     >
-      {onVerticalScroll(dy =>
-        hyprland.message(
-          `dispatch hl.dsp.focus({ workspace = "${dy > 0 ? "+1" : "-1"}" })`,
-        )
+      {onVerticalScroll((dy) =>
+        execAsync(
+          isNiri
+            ? `niri msg action ${dy > 0 ? "focus-workspace-down" : "focus-workspace-up"}`
+            : `hyprctl dispatch workspace ${dy > 0 ? "e+1" : "e-1"}`,
+        ).catch(print),
       )}
     </Gtk.Button>
   )
