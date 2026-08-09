@@ -18,6 +18,8 @@ type Workspace = {
 }
 
 const isNiri = GLib.getenv("NIRI_SOCKET") !== null
+const focusHyprlandWorkspace = (workspace: number | string) =>
+  `hyprctl dispatch 'hl.dsp.focus({ workspace = "${workspace}" })'`
 
 const windowIcon = (cls: string, title: string): string => {
   if (/bitwarden/i.test(cls)) return "  "
@@ -129,7 +131,7 @@ const Workspace = ({ id }: { id: number }) => {
         execAsync(
           isNiri
             ? `niri msg action focus-workspace ${id}`
-            : `hyprctl dispatch workspace ${id}`,
+            : focusHyprlandWorkspace(id),
         ).catch(print)
       }
     >
@@ -137,7 +139,7 @@ const Workspace = ({ id }: { id: number }) => {
         execAsync(
           isNiri
             ? `niri msg action ${dy > 0 ? "focus-workspace-down" : "focus-workspace-up"}`
-            : `hyprctl dispatch workspace ${dy > 0 ? "e+1" : "e-1"}`,
+            : focusHyprlandWorkspace(dy > 0 ? "e+1" : "e-1"),
         ).catch(print),
       )}
     </Gtk.Button>
