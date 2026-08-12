@@ -1,7 +1,8 @@
-import { createComputed, For } from "ags"
+import { createComputed, createState, For } from "ags"
 import { Gtk } from "ags/gtk4"
 import { execAsync } from "ags/process"
 import { createPoll } from "ags/time"
+import Gio from "gi://Gio"
 import GLib from "gi://GLib"
 import { PERSISTENT_WORKSPACES } from "../../../config"
 import { onVerticalScroll } from "../../../utils"
@@ -91,9 +92,92 @@ const getNiriWorkspaces = async (): Promise<Workspace[]> => {
     }))
 }
 
-const workspaces = createPoll<Workspace[]>([], 1000, () =>
-  (isNiri ? getNiriWorkspaces() : getHyprlandWorkspaces()).catch(() => []),
-)
+const [hyprlandWorkspaces, setHyprlandWorkspaces] = createState<Workspace[]>([])
+let refreshingHyprlandWorkspaces = false
+let pendingHyprlandWorkspaceRefresh = false
+
+const refreshHyprlandWorkspaces = (): void => {
+  if (refreshingHyprlandWorkspaces) {
+    pendingHyprlandWorkspaceRefresh = true
+    return
+  }
+
+  refreshingHyprlandWorkspaces = true
+  getHyprlandWorkspaces()
+    .then(setHyprlandWorkspaces)
+    .catch(print)
+    .finally(() => {
+      refreshingHyprlandWorkspaces = false
+      if (pendingHyprlandWorkspaceRefresh) {
+        pendingHyprlandWorkspaceRefresh = false
+        refreshHyprlandWorkspaces()
+      }
+    })
+}
+
+const workspaceEvents: Record<string, true> = {
+  workspace: true,
+  workspacev2: true,
+  focusedmon: true,
+  focusedmonv2: true,
+  createworkspace: true,
+  createworkspacev2: true,
+  destroyworkspace: true,
+  destroyworkspacev2: true,
+  openwindow: true,
+  closewindow: true,
+  movewindow: true,
+  movewindowv2: true,
+  windowtitle: true,
+}
+
+const listenToHyprlandEvents = () => {
+  const signature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE")
+  const runtimeDir = GLib.getenv("XDG_RUNTIME_DIR")
+  if (!signature || !runtimeDir) return
+
+  const socket = new Gio.SocketClient()
+  const address = new Gio.UnixSocketAddress({
+    path: `${runtimeDir}/hypr/${signature}/.socket2.sock`,
+  })
+
+  socket.connect_async(address, null, (_socket, result) => {
+    try {
+      const connection = socket.connect_finish(result)
+      const input = new Gio.DataInputStream({
+        base_stream: connection.get_input_stream(),
+      })
+
+      const readEvent = (): void => {
+        input.read_line_async(GLib.PRIORITY_DEFAULT, null, (_input, readResult) => {
+          try {
+            const [event] = input.read_line_finish_utf8(readResult)
+            if (!event) return
+
+            if (workspaceEvents[event.split(">>", 1)[0]])
+              refreshHyprlandWorkspaces()
+            readEvent()
+          } catch (error) {
+            print(error)
+          }
+        })
+      }
+
+      readEvent()
+    } catch (error) {
+      print(error)
+    }
+  })
+}
+
+if (!isNiri) {
+  void refreshHyprlandWorkspaces()
+  void listenToHyprlandEvents()
+}
+
+const workspaces = isNiri
+  ? createPoll<Workspace[]>([], 1000, () => getNiriWorkspaces().catch(() => []))
+  : hyprlandWorkspaces
 
 const allIds = workspaces.as((current) =>
   [...new Set([...PERSISTENT_WORKSPACES, ...current.map(({ id }) => id)])].sort(
