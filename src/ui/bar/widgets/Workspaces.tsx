@@ -18,6 +18,19 @@ type Workspace = {
   focused: boolean
 }
 
+const uniqueApplications = (clients: Client[]): Client[] => {
+  const applications = new Set<string>()
+
+  return clients.filter((client) => {
+    const application = client.class.toLowerCase()
+    if (!application) return true
+    if (applications.has(application)) return false
+
+    applications.add(application)
+    return true
+  })
+}
+
 const isNiri = GLib.getenv("NIRI_SOCKET") !== null
 const focusHyprlandWorkspace = (workspace: number | string) =>
   `hyprctl dispatch 'hl.dsp.focus({ workspace = "${workspace}" })'`
@@ -61,12 +74,14 @@ const getHyprlandWorkspaces = async (): Promise<Workspace[]> => {
   return workspaces.map(({ id }: { id: number }) => ({
     id,
     focused: id === active.id,
-    clients: clients
-      .filter(({ workspace }: { workspace: { id: number } }) => workspace.id === id)
-      .map(({ class: cls, title }: { class: string; title: string }) => ({
-        class: cls,
-        title,
-      })),
+    clients: uniqueApplications(
+      clients
+        .filter(({ workspace }: { workspace: { id: number } }) => workspace.id === id)
+        .map(({ class: cls, title }: { class: string; title: string }) => ({
+          class: cls,
+          title,
+        })),
+    ),
   }))
 }
 
@@ -83,12 +98,14 @@ const getNiriWorkspaces = async (): Promise<Workspace[]> => {
     .map(({ id, idx, is_focused }: { id: number; idx: number; is_focused: boolean }) => ({
       id: idx,
       focused: is_focused,
-      clients: windows
-        .filter(({ workspace_id }: { workspace_id: number }) => workspace_id === id)
-        .map(({ app_id, title }: { app_id: string | null; title: string }) => ({
-          class: app_id ?? "",
-          title,
-        })),
+      clients: uniqueApplications(
+        windows
+          .filter(({ workspace_id }: { workspace_id: number }) => workspace_id === id)
+          .map(({ app_id, title }: { app_id: string | null; title: string }) => ({
+            class: app_id ?? "",
+            title,
+          })),
+      ),
     }))
 }
 
