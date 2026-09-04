@@ -9,7 +9,7 @@ import { onVerticalScroll } from "../../../utils"
 
 type Client = {
   class: string
-  title: string
+  icon: string
 }
 
 type Workspace = {
@@ -79,7 +79,7 @@ const getHyprlandWorkspaces = async (): Promise<Workspace[]> => {
         .filter(({ workspace }: { workspace: { id: number } }) => workspace.id === id)
         .map(({ class: cls, title }: { class: string; title: string }) => ({
           class: cls,
-          title,
+          icon: windowIcon(cls, title),
         })),
     ),
   }))
@@ -103,12 +103,27 @@ const getNiriWorkspaces = async (): Promise<Workspace[]> => {
           .filter(({ workspace_id }: { workspace_id: number }) => workspace_id === id)
           .map(({ app_id, title }: { app_id: string | null; title: string }) => ({
             class: app_id ?? "",
-            title,
+            icon: windowIcon(app_id ?? "", title),
           })),
       ),
     }))
 }
 
+const sameWorkspaces = (left: Workspace[], right: Workspace[]): boolean =>
+  left.length === right.length &&
+  left.every(
+    (workspace, index) =>
+      workspace.id === right[index]?.id &&
+      workspace.focused === right[index]?.focused &&
+      workspace.clients.length === right[index]?.clients.length &&
+      workspace.clients.every(
+        (client, clientIndex) =>
+          client.class === right[index]?.clients[clientIndex]?.class &&
+          client.icon === right[index]?.clients[clientIndex]?.icon,
+      ),
+  )
+
+let lastHyprlandWorkspaces: Workspace[] = []
 const [hyprlandWorkspaces, setHyprlandWorkspaces] = createState<Workspace[]>([])
 let refreshingHyprlandWorkspaces = false
 let pendingHyprlandWorkspaceRefresh = false
@@ -121,7 +136,12 @@ const refreshHyprlandWorkspaces = (): void => {
 
   refreshingHyprlandWorkspaces = true
   getHyprlandWorkspaces()
-    .then(setHyprlandWorkspaces)
+    .then((next) => {
+      if (sameWorkspaces(lastHyprlandWorkspaces, next)) return
+
+      lastHyprlandWorkspaces = next
+      setHyprlandWorkspaces(next)
+    })
     .catch(print)
     .finally(() => {
       refreshingHyprlandWorkspaces = false
@@ -207,9 +227,7 @@ const Workspace = ({ id }: { id: number }) => {
     current.find((currentWorkspace) => currentWorkspace.id === id),
   )
   const icons = workspace.as((current) =>
-    current?.clients
-      .map(({ class: cls, title }) => windowIcon(cls, title))
-      .join("") ?? "",
+    current?.clients.map(({ icon }) => icon).join("") ?? "",
   )
   const klass = createComputed(() => {
     const current = workspace()
